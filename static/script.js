@@ -1,6 +1,16 @@
 (function () {
     "use strict";
 
+    function renderMarkdown(text) {
+        if (!text) return "";
+        try {
+            marked.setOptions({ breaks: true, gfm: true });
+            return marked.parse(text);
+        } catch {
+            return text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+    }
+
     const $ = (id) => document.getElementById(id);
     const chatMessages = $("chatMessages");
     const userInput = $("userInput");
@@ -153,61 +163,61 @@
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-   async function sendMessage() {
-    const prompt = userInput.value.trim();
-    if (!prompt || isProcessing) return;
+    async function sendMessage() {
+        const prompt = userInput.value.trim();
+        if (!prompt || isProcessing) return;
 
-    isProcessing = true;
-    btnSend.disabled = true;
-    userInput.value = "";
-    userInput.style.height = "auto";
+        isProcessing = true;
+        btnSend.disabled = true;
+        userInput.value = "";
+        userInput.style.height = "auto";
 
-    removeWelcome();
-    createBubble("user").textContent = prompt;
-    scrollBottom();
-    addTyping();
+        removeWelcome();
+        createBubble("user").innerHTML = renderMarkdown(prompt);
+        scrollBottom();
+        addTyping();
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 30000);
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 30000);
 
-    try {
-        const response = await fetch("/api/chat", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ prompt }),
-            signal: controller.signal
-        });
+        try {
+            const response = await fetch("/api/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ prompt }),
+                signal: controller.signal
+            });
 
-        clearTimeout(timeout);
-        removeTyping();
+            clearTimeout(timeout);
+            removeTyping();
 
-        const data = await response.json();
-        const reply = data.reply || "Tidak ada respon.";
+            const data = await response.json();
+            const reply = data.reply || "Tidak ada respon.";
 
-        const bubble = createBubble("assistant");
-        
-        if (data.error || reply.startsWith("Error")) {
-            bubble.textContent = "Maaf, terjadi kesalahan. Coba lagi dengan pertanyaan yang lebih singkat.";
-        } else {
-            bubble.textContent = reply;
+            const bubble = createBubble("assistant");
+
+            if (data.error || reply.startsWith("Error")) {
+                bubble.innerHTML = renderMarkdown("Maaf, terjadi kesalahan. Coba lagi dengan pertanyaan yang lebih singkat.");
+            } else {
+                bubble.innerHTML = renderMarkdown(reply);
+            }
+
+            scrollBottom();
+
+        } catch (e) {
+            clearTimeout(timeout);
+            removeTyping();
+
+            if (e.name === "AbortError") {
+                createBubble("assistant").innerHTML = renderMarkdown("Waktu habis. Coba pertanyaan yang lebih singkat.");
+            } else {
+                createBubble("assistant").innerHTML = renderMarkdown("Gagal terhubung. Periksa koneksi.");
+            }
+            scrollBottom();
         }
 
-        scrollBottom();
-
-    } catch (e) {
-        clearTimeout(timeout);
-        removeTyping();
-        
-        if (e.name === "AbortError") {
-            createBubble("assistant").textContent = "Waktu habis. Coba pertanyaan yang lebih singkat.";
-        } else {
-            createBubble("assistant").textContent = "Gagal terhubung. Periksa koneksi.";
-        }
-        scrollBottom();
+        isProcessing = false;
+        btnSend.disabled = false;
+        userInput.focus();
     }
-
-    isProcessing = false;
-    btnSend.disabled = false;
-    userInput.focus();
-}
 })();
