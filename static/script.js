@@ -84,15 +84,27 @@
     function toggleSidebar() {
         sidebar.classList.toggle("open");
         overlay.classList.toggle("active");
-        sidebarToggle.classList.toggle("active");
+        if (sidebarToggle) {
+            sidebarToggle.classList.toggle("active");
+        }
     }
 
+    // Event listeners hanya untuk mobile (lebar <= 768px)
     if (sidebarToggle) {
         sidebarToggle.addEventListener("click", toggleSidebar);
     }
     if (overlay) {
         overlay.addEventListener("click", toggleSidebar);
     }
+
+    // Tutup sidebar kalau resize ke desktop
+    window.addEventListener("resize", () => {
+        if (window.innerWidth > 768) {
+            sidebar.classList.remove("open");
+            overlay.classList.remove("active");
+            if (sidebarToggle) sidebarToggle.classList.remove("active");
+        }
+    });
 
     function autoResize() {
         userInput.style.height = "auto";
