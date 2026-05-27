@@ -389,8 +389,6 @@ body {
     border-radius: var(--radius) var(--radius) var(--radius) 4px;
 }
 
-/* ============ MARKDOWN STYLING ============ */
-
 .message-content pre {
     background: #0d1117;
     padding: 16px;
@@ -493,8 +491,6 @@ body {
     margin: 8px 0;
 }
 
-/* ============ TYPING INDICATOR ============ */
-
 .typing-indicator {
     display: flex;
     gap: 4px;
@@ -516,8 +512,6 @@ body {
     0%, 60%, 100% { transform: translateY(0); }
     30% { transform: translateY(-8px); }
 }
-
-/* ============ INPUT AREA ============ */
 
 .chat-input-area {
     padding: 16px 24px 24px;
@@ -598,7 +592,61 @@ body {
     color: var(--text-muted);
 }
 
-/* ============ RESPONSIVE ============ */
+.install-banner {
+    display: none;
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 200;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 0;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    width: calc(100% - 40px);
+    max-width: 400px;
+}
+
+.install-banner-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.install-banner-content span {
+    flex: 1;
+}
+
+.install-banner-content button {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: var(--transition);
+}
+
+#btnInstall {
+    background: var(--accent);
+    color: #fff;
+}
+
+#btnInstall:active {
+    transform: scale(0.95);
+}
+
+#btnDismiss {
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 1.2rem;
+    padding: 4px 8px;
+}
 
 @media (max-width: 768px) {
     .sidebar {

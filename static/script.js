@@ -21,8 +21,15 @@
     const sidebar = $("sidebar");
     const overlay = $("overlay");
     const particlesContainer = $("particles");
+    const memoryCount = $("memoryCount");
+    const memoryInfo = $("memoryInfo");
+    const installBanner = $("installBanner");
+    const btnInstall = $("btnInstall");
+    const btnDismiss = $("btnDismiss");
 
     let isProcessing = false;
+    let chatHistory = [];
+    let deferredPrompt = null;
 
     const DAYS = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
     const MONTHS = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
@@ -90,7 +97,44 @@
 
     btnSend.addEventListener("click", sendMessage);
 
+    function saveHistory() {
+        try {
+            const trimmed = chatHistory.slice(-20);
+            localStorage.setItem("tazanai_history", JSON.stringify(trimmed));
+            updateMemoryBadge();
+        } catch {
+            localStorage.removeItem("tazanai_history");
+        }
+    }
+
+    function loadHistory() {
+        try {
+            const raw = localStorage.getItem("tazanai_history");
+            if (raw) {
+                const data = JSON.parse(raw);
+                if (Array.isArray(data)) chatHistory = data.slice(-20);
+            }
+        } catch {
+            chatHistory = [];
+        }
+        updateMemoryBadge();
+    }
+
+    function updateMemoryBadge() {
+        if (chatHistory.length > 0) {
+            memoryInfo.style.display = "flex";
+            memoryCount.textContent = `${chatHistory.length} pesan`;
+        } else {
+            memoryInfo.style.display = "none";
+        }
+    }
+
+    loadHistory();
+
     function clearChat() {
+        chatHistory = [];
+        localStorage.removeItem("tazanai_history");
+        updateMemoryBadge();
         chatMessages.innerHTML = `
             <div class="welcome-message" id="welcomeMessage">
                 <div class="welcome-icon">
@@ -177,6 +221,8 @@
         scrollBottom();
         addTyping();
 
+        chatHistory.push({ role: "user", content: prompt });
+
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 30000);
 
@@ -184,7 +230,10 @@
             const response = await fetch("/api/chat", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ prompt }),
+                body: JSON.stringify({
+                    prompt,
+                    history: chatHistory.slice(-20)
+                }),
                 signal: controller.signal
             });
 
@@ -197,9 +246,11 @@
             const bubble = createBubble("assistant");
 
             if (data.error || reply.startsWith("Error")) {
-                bubble.innerHTML = renderMarkdown("Maaf, terjadi kesalahan. Coba lagi dengan pertanyaan yang lebih singkat.");
+                bubble.innerHTML = renderMarkdown("Maaf, terjadi kesalahan. Coba lagi.");
             } else {
                 bubble.innerHTML = renderMarkdown(reply);
+                chatHistory.push({ role: "assistant", content: reply });
+                saveHistory();
             }
 
             scrollBottom();
@@ -220,4 +271,38 @@
         btnSend.disabled = false;
         userInput.focus();
     }
+
+    if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+            navigator.serviceWorker.register("/static/sw.js").catch(() => {});
+        });
+    }
+
+    window.addEventListener("beforeinstallprompt", (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        installBanner.style.display = "block";
+        gsap.from(installBanner, { y: 100, opacity: 0, duration: 0.5, ease: "power2.out" });
+    });
+
+    btnInstall.addEventListener("click", async () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const result = await deferredPrompt.userChoice;
+            if (result.outcome === "accepted") {
+                installBanner.style.display = "none";
+            }
+            deferredPrompt = null;
+        }
+    });
+
+    btnDismiss.addEventListener("click", () => {
+        gsap.to(installBanner, { y: 100, opacity: 0, duration: 0.3, ease: "power2.in", onComplete: () => {
+            installBanner.style.display = "none";
+        }});
+    });
+
+    window.addEventListener("appinstalled", () => {
+        installBanner.style.display = "none";
+    });
 })();

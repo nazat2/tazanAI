@@ -2,9 +2,14 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="description" content="TazanAI - Asisten AI cerdas berbasis DeepSeek">
     <meta name="theme-color" content="#0a0a0f">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="TazanAI">
+    <link rel="apple-touch-icon" href="/static/icon-192.png">
+    <link rel="manifest" href="/manifest.json">
     <title>TazanAI</title>
     <link rel="stylesheet" href="/static/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -46,11 +51,15 @@
                 <div class="sidebar-info">
                     <div class="info-card">
                         <span class="info-dot"></span>
-                        <span>DeepSeek R1 + Chat</span>
+                        <span id="modelBadge">DeepSeek R1 + Chat</span>
                     </div>
                     <div class="info-card">
                         <span class="info-label">Waktu</span>
                         <span class="info-value" id="currentTime"></span>
+                    </div>
+                    <div class="info-card" id="memoryInfo" style="display:none;">
+                        <span class="info-label">Memory</span>
+                        <span class="info-value" id="memoryCount">0 pesan</span>
                     </div>
                 </div>
             </div>
@@ -87,6 +96,14 @@
                 </div>
                 <span class="input-hint">Enter kirim, Shift+Enter baris baru</span>
             </div>
+        </div>
+    </div>
+
+    <div class="install-banner" id="installBanner">
+        <div class="install-banner-content">
+            <span>📱 Install TazanAI di HP kamu</span>
+            <button id="btnInstall">Install</button>
+            <button id="btnDismiss">✕</button>
         </div>
     </div>
 
