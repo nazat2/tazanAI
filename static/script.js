@@ -130,7 +130,13 @@
     /* ========== CHAT ========== */
     function autoResize() {
         userInput.style.height = "auto";
-        userInput.style.height = `${Math.min(userInput.scrollHeight, 120)}px`;
+        const newHeight = Math.min(userInput.scrollHeight, 120);
+        userInput.style.height = `${newHeight}px`;
+        if (userInput.scrollHeight > 120) {
+            userInput.style.overflowY = "auto";
+        } else {
+            userInput.style.overflowY = "hidden";
+        }
     }
     userInput.addEventListener("input", autoResize);
     userInput.addEventListener("keydown", (e) => {
@@ -239,6 +245,7 @@
         btnSend.disabled = true;
         userInput.value = "";
         userInput.style.height = "auto";
+        userInput.style.overflowY = "hidden"; // reset overflow
         createBubble("user", prompt);
         addTyping();
         chatHistory.push({ role: "user", content: prompt });
