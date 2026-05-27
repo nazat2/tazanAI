@@ -3,35 +3,13 @@ export const config = {
     regions: ["sin1"]
 };
 
-const MAX_HISTORY = 10;
-const MAX_INPUT = 4000;
-
-const SYSTEM_PROMPT = `Kamu adalah tazan ai, asisten AI paling cerdas. Kamu selalu menjawab dengan akurat, mendalam, dan penuh wawasan. Kamu menguasai semua bidang. Gaya bicaramu santai seperti teman dekat. Kamu selalu menggunakan Bahasa Indonesia, kecuali diminta bahasa lain. TAHUN SEKARANG 2026.`;
-
-function sanitize(str) {
-    return str.replace(/[<>]/g, "").trim().slice(0, MAX_INPUT);
-}
-
-function parseHistory(cookie) {
-    if (!cookie) return [];
-    try {
-        const decoded = decodeURIComponent(cookie);
-        const data = JSON.parse(decoded);
-        return Array.isArray(data) ? data.slice(-MAX_HISTORY * 2) : [];
-    } catch {
-        return [];
-    }
-}
+const SYSTEM_PROMPT = `Kamu adalah tazan ai, asisten AI paling cerdas. Kamu selalu menjawab dengan akurat, mendalam, dan penuh wawasan. Kamu menguasai semua bidang. Gaya bicaramu santai seperti teman dekat. Kamu selalu menggunakan Bahasa Indonesia, kecuali diminta bahasa lain. Setiap jawaban WAJIB diawali dengan "tazan ai: ". TAHUN SEKARANG 2026.`;
 
 export default async function handler(req) {
-    const origin = req.headers.get("origin") || "*";
-
     const corsHeaders = {
-        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization",
-        "Access-Control-Allow-Credentials": "true",
-        "Access-Control-Max-Age": "86400"
+        "Access-Control-Allow-Headers": "Content-Type"
     };
 
     if (req.method === "OPTIONS") {
@@ -47,20 +25,14 @@ export default async function handler(req) {
 
     try {
         const body = await req.json();
-        const prompt = sanitize(body.prompt || "");
+        const prompt = (body.prompt || "").trim().slice(0, 4000);
 
         if (!prompt) {
-            return new Response(JSON.stringify({ error: "Prompt kosong" }), {
-                status: 400,
+            return new Response(JSON.stringify({ reply: "Prompt kosong." }), {
+                status: 200,
                 headers: { ...corsHeaders, "Content-Type": "application/json" }
             });
         }
-
-        const cookies = req.headers.get("cookie") || "";
-        const match = cookies.match(/tazanai_history=([^;]+)/);
-        const history = parseHistory(match ? match[1] : null);
-
-        history.push({ role: "user", content: prompt });
 
         const isComplex = prompt.length > 60 || [
             "jelaskan", "analisis", "buatkan", "bagaimana", "mengapa",
@@ -75,88 +47,40 @@ export default async function handler(req) {
             headers: {
                 "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
                 "Content-Type": "application/json",
-                "HTTP-Referer": process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://tazanai.vercel.app",
+                "HTTP-Referer": "https://tazan-ai.vercel.app",
                 "X-Title": "tazan ai"
             },
             body: JSON.stringify({
                 model,
-                messages: [{ role: "system", content: SYSTEM_PROMPT }, ...history],
+                messages: [
+                    { role: "system", content: SYSTEM_PROMPT },
+                    { role: "user", content: prompt }
+                ],
                 temperature: 0.7,
-                max_tokens: 3000,
-                top_p: 0.95,
-                stream: true
+                max_tokens: 2000,
+                stream: false
             })
         });
 
         if (!response.ok) {
-            return new Response(JSON.stringify({ error: `API error: ${response.status}` }), {
-                status: 502,
+            const err = await response.text();
+            return new Response(JSON.stringify({ reply: `Error ${response.status}: ${err.slice(0, 200)}` }), {
+                status: 200,
                 headers: { ...corsHeaders, "Content-Type": "application/json" }
             });
         }
 
-        const reader = response.body.getReader();
-        const encoder = new TextEncoder();
-        let fullResponse = "";
+        const data = await response.json();
+        const reply = data.choices?.[0]?.message?.content || "Tidak ada respon dari AI.";
 
-        const stream = new ReadableStream({
-            async start(controller) {
-                try {
-                    while (true) {
-                        const { done, value } = await reader.read();
-                        if (done) break;
-
-                        const chunk = new TextDecoder().decode(value, { stream: true });
-                        const lines = chunk.split("\n");
-
-                        for (const line of lines) {
-                            if (line.startsWith("data: ")) {
-                                const data = line.slice(6);
-                                if (data === "[DONE]") {
-                                    history.push({ role: "assistant", content: fullResponse });
-                                    const trimmed = history.slice(-MAX_HISTORY * 2);
-                                    const payload = JSON.stringify({ done: true, history: trimmed }) + "\n\n";
-                                    controller.enqueue(encoder.encode(`data: ${payload}`));
-                                    controller.close();
-                                    return;
-                                }
-                                try {
-                                    const parsed = JSON.parse(data);
-                                    const content = parsed.choices?.[0]?.delta?.content;
-                                    if (content) {
-                                        fullResponse += content;
-                                        const payload = JSON.stringify({ content }) + "\n\n";
-                                        controller.enqueue(encoder.encode(`data: ${payload}`));
-                                    }
-                                } catch {
-                                    continue;
-                                }
-                            }
-                        }
-                    }
-                    controller.close();
-                } catch {
-                    const payload = JSON.stringify({ error: "Stream interrupted" }) + "\n\n";
-                    controller.enqueue(encoder.encode(`data: ${payload}`));
-                    controller.close();
-                }
-            }
-        });
-
-        return new Response(stream, {
+        return new Response(JSON.stringify({ reply }), {
             status: 200,
-            headers: {
-                ...corsHeaders,
-                "Content-Type": "text/event-stream",
-                "Cache-Control": "no-cache",
-                "Connection": "keep-alive",
-                "X-Content-Type-Options": "nosniff"
-            }
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
         });
 
-    } catch {
-        return new Response(JSON.stringify({ error: "Internal server error" }), {
-            status: 500,
+    } catch (e) {
+        return new Response(JSON.stringify({ reply: `Error: ${e.message}` }), {
+            status: 200,
             headers: { ...corsHeaders, "Content-Type": "application/json" }
         });
     }
