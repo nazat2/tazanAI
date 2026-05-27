@@ -58,13 +58,8 @@ export default async function handler(req) {
             ...history
         ];
 
-        const isComplex = prompt.length > 60 || [
-            "jelaskan", "analisis", "buatkan", "bagaimana", "mengapa",
-            "tulis", "rangkum", "hitung", "bandingkan", "kode", "script",
-            "program", "algoritma", "debug", "error", "fix", "perbaiki"
-        ].some(kw => prompt.toLowerCase().includes(kw));
-
-        const model = isComplex ? "deepseek/deepseek-r1" : "deepseek/deepseek-chat";
+        // Pake deepseek-chat aja (lebih cepat), R1 terlalu lambat buat Vercel edge
+        const model = "deepseek/deepseek-chat";
 
         const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
             method: "POST",
@@ -78,7 +73,7 @@ export default async function handler(req) {
                 model,
                 messages,
                 temperature: 0.7,
-                max_tokens: 2000,
+                max_tokens: 1024,
                 stream: false
             })
         });
