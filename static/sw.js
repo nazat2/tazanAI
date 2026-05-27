@@ -17,7 +17,9 @@ const ASSETS = [
 self.addEventListener("install", (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
-            return cache.addAll(ASSETS);
+            return Promise.allSettled(
+                ASSETS.map(asset => cache.add(asset).catch(err => console.warn("Gagal cache:", asset, err)))
+            );
         })
     );
     self.skipWaiting();

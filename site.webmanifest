@@ -10,15 +10,15 @@
     "lang": "id-ID",
     "icons": [
         {
-            "src": "/static/icon-192.png",
-            "sizes": "192x192",
+            "src": "/static/favicon-96x96.png",
+            "sizes": "96x96",
             "type": "image/png",
             "purpose": "any maskable"
         },
         {
-            "src": "/static/icon-512.png",
-            "sizes": "512x512",
-            "type": "image/png",
+            "src": "/static/favicon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
             "purpose": "any maskable"
         }
     ],

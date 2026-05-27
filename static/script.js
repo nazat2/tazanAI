@@ -4,8 +4,11 @@
     function renderMarkdown(text) {
         if (!text) return "";
         try {
-            marked.setOptions({ breaks: true, gfm: true });
-            return marked.parse(text);
+            if (typeof marked !== "undefined") {
+                marked.setOptions({ breaks: true, gfm: true });
+                return marked.parse(text);
+            }
+            return text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
         } catch {
             return text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
         }
@@ -40,13 +43,14 @@
     }
 
     function updateTime() {
-        currentTime.textContent = now();
+        if (currentTime) currentTime.textContent = now();
     }
 
     updateTime();
     setInterval(updateTime, 30000);
 
     function createParticles() {
+        if (!particlesContainer || typeof gsap === "undefined") return;
         const frag = document.createDocumentFragment();
         for (let i = 0; i < 30; i++) {
             const p = document.createElement("div");
@@ -71,16 +75,24 @@
     }
 
     createParticles();
-    gsap.from(".sidebar", { x: -50, opacity: 0, duration: 0.8, ease: "power3.out" });
-    gsap.from(".chat-input-area", { y: 40, opacity: 0, duration: 0.8, delay: 0.3, ease: "power3.out" });
+
+    if (typeof gsap !== "undefined") {
+        gsap.from(".sidebar", { x: -50, opacity: 0, duration: 0.8, ease: "power3.out" });
+        gsap.from(".chat-input-area", { y: 40, opacity: 0, duration: 0.8, delay: 0.3, ease: "power3.out" });
+    }
 
     function toggleSidebar() {
         sidebar.classList.toggle("open");
         overlay.classList.toggle("active");
+        sidebarToggle.classList.toggle("active");
     }
 
-    sidebarToggle.addEventListener("click", toggleSidebar);
-    overlay.addEventListener("click", toggleSidebar);
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener("click", toggleSidebar);
+    }
+    if (overlay) {
+        overlay.addEventListener("click", toggleSidebar);
+    }
 
     function autoResize() {
         userInput.style.height = "auto";
@@ -121,6 +133,7 @@
     }
 
     function updateMemoryBadge() {
+        if (!memoryInfo || !memoryCount) return;
         if (chatHistory.length > 0) {
             memoryInfo.style.display = "flex";
             memoryCount.textContent = `${chatHistory.length} pesan`;
@@ -147,15 +160,23 @@
                 <h2>Halo, aku TazanAI</h2>
                 <p>Tanya apa saja, aku siap bantu.</p>
             </div>`;
-        gsap.from("#welcomeMessage", { opacity: 0, y: 20, duration: 0.6, ease: "power2.out" });
+        if (typeof gsap !== "undefined") {
+            gsap.from("#welcomeMessage", { opacity: 0, y: 20, duration: 0.6, ease: "power2.out" });
+        }
     }
 
-    btnClear.addEventListener("click", clearChat);
+    if (btnClear) {
+        btnClear.addEventListener("click", clearChat);
+    }
 
     function removeWelcome() {
         const wm = $("welcomeMessage");
         if (wm) {
-            gsap.to(wm, { opacity: 0, y: -20, duration: 0.3, ease: "power2.in", onComplete: () => wm.remove() });
+            if (typeof gsap !== "undefined") {
+                gsap.to(wm, { opacity: 0, y: -20, duration: 0.3, ease: "power2.in", onComplete: () => wm.remove() });
+            } else {
+                wm.remove();
+            }
         }
     }
 
@@ -165,7 +186,9 @@
 
         const avatar = document.createElement("div");
         avatar.classList.add("message-avatar");
-        avatar.textContent = role === "user" ? "U" : "TA";
+        avatar.innerHTML = role === "user" 
+            ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-7 8-7s8 3 8 7"/></svg>`
+            : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>`;
 
         const content = document.createElement("div");
         content.classList.add("message-content");
@@ -173,7 +196,9 @@
         div.appendChild(avatar);
         div.appendChild(content);
         chatMessages.appendChild(div);
-        gsap.from(div, { opacity: 0, y: 20, duration: 0.4, ease: "power2.out" });
+        if (typeof gsap !== "undefined") {
+            gsap.from(div, { opacity: 0, y: 20, duration: 0.4, ease: "power2.out" });
+        }
 
         return content;
     }
@@ -186,7 +211,7 @@
 
         const avatar = document.createElement("div");
         avatar.classList.add("message-avatar");
-        avatar.textContent = "TA";
+        avatar.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>`;
 
         const content = document.createElement("div");
         content.classList.add("message-content");
@@ -222,6 +247,7 @@
         addTyping();
 
         chatHistory.push({ role: "user", content: prompt });
+        saveHistory();
 
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 30000);
@@ -245,8 +271,8 @@
 
             const bubble = createBubble("assistant");
 
-            if (data.error || reply.startsWith("Error")) {
-                bubble.innerHTML = renderMarkdown("Maaf, terjadi kesalahan. Coba lagi.");
+            if (reply.startsWith("Error")) {
+                bubble.innerHTML = renderMarkdown("⚠️ Maaf, terjadi kesalahan. Coba lagi ya.");
             } else {
                 bubble.innerHTML = renderMarkdown(reply);
                 chatHistory.push({ role: "assistant", content: reply });
@@ -260,9 +286,9 @@
             removeTyping();
 
             if (e.name === "AbortError") {
-                createBubble("assistant").innerHTML = renderMarkdown("Waktu habis. Coba pertanyaan yang lebih singkat.");
+                createBubble("assistant").innerHTML = renderMarkdown("⏰ Waktu habis. Coba pertanyaan yang lebih singkat ya.");
             } else {
-                createBubble("assistant").innerHTML = renderMarkdown("Gagal terhubung. Periksa koneksi.");
+                createBubble("assistant").innerHTML = renderMarkdown("📡 Gagal terhubung. Periksa koneksi internet kamu.");
             }
             scrollBottom();
         }
@@ -281,28 +307,40 @@
     window.addEventListener("beforeinstallprompt", (e) => {
         e.preventDefault();
         deferredPrompt = e;
-        installBanner.style.display = "block";
-        gsap.from(installBanner, { y: 100, opacity: 0, duration: 0.5, ease: "power2.out" });
-    });
-
-    btnInstall.addEventListener("click", async () => {
-        if (deferredPrompt) {
-            deferredPrompt.prompt();
-            const result = await deferredPrompt.userChoice;
-            if (result.outcome === "accepted") {
-                installBanner.style.display = "none";
+        if (installBanner) {
+            installBanner.style.display = "block";
+            if (typeof gsap !== "undefined") {
+                gsap.from(installBanner, { y: 100, opacity: 0, duration: 0.5, ease: "power2.out" });
             }
-            deferredPrompt = null;
         }
     });
 
-    btnDismiss.addEventListener("click", () => {
-        gsap.to(installBanner, { y: 100, opacity: 0, duration: 0.3, ease: "power2.in", onComplete: () => {
-            installBanner.style.display = "none";
-        }});
-    });
+    if (btnInstall) {
+        btnInstall.addEventListener("click", async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const result = await deferredPrompt.userChoice;
+                if (result.outcome === "accepted") {
+                    installBanner.style.display = "none";
+                }
+                deferredPrompt = null;
+            }
+        });
+    }
+
+    if (btnDismiss) {
+        btnDismiss.addEventListener("click", () => {
+            if (typeof gsap !== "undefined") {
+                gsap.to(installBanner, { y: 100, opacity: 0, duration: 0.3, ease: "power2.in", onComplete: () => {
+                    installBanner.style.display = "none";
+                }});
+            } else {
+                installBanner.style.display = "none";
+            }
+        });
+    }
 
     window.addEventListener("appinstalled", () => {
-        installBanner.style.display = "none";
+        if (installBanner) installBanner.style.display = "none";
     });
 })();

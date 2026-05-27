@@ -30,6 +30,13 @@ export default async function handler(req) {
         });
     }
 
+    if (!process.env.OPENROUTER_API_KEY) {
+        return new Response(JSON.stringify({ reply: "Error: API key tidak dikonfigurasi." }), {
+            status: 200,
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+    }
+
     try {
         const body = await req.json();
         const prompt = sanitize(body.prompt || "");
