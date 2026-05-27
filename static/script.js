@@ -206,7 +206,7 @@
         avatar.classList.add("message-avatar");
         avatar.innerHTML = role === "user"
             ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-7 8-7s8 3 8 7"/></svg>`
-            : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>`;
+            : `<img src="/static/favicon-96x96.png" alt="AI" width="20" height="20" style="border-radius:50%;">`;
         const contentDiv = document.createElement("div");
         contentDiv.classList.add("message-content");
         contentDiv.innerHTML = renderMarkdown(content);
@@ -225,7 +225,7 @@
         div.id = "typingMessage";
         const avatar = document.createElement("div");
         avatar.classList.add("message-avatar");
-        avatar.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>`;
+        avatar.innerHTML = `<img src="/static/favicon-96x96.png" alt="AI" width="20" height="20" style="border-radius:50%;">`;
         const content = document.createElement("div");
         content.classList.add("message-content");
         content.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
@@ -245,7 +245,7 @@
         btnSend.disabled = true;
         userInput.value = "";
         userInput.style.height = "auto";
-        userInput.style.overflowY = "hidden"; // reset overflow
+        userInput.style.overflowY = "hidden";
         createBubble("user", prompt);
         addTyping();
         chatHistory.push({ role: "user", content: prompt });
