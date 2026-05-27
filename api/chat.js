@@ -1,87 +1,87 @@
-export const config = {
-    runtime: "edge",
-    regions: ["sin1"]
-};
-
-const SYSTEM_PROMPT = `Kamu adalah tazan ai, asisten AI paling cerdas. Kamu selalu menjawab dengan akurat, mendalam, dan penuh wawasan. Kamu menguasai semua bidang. Gaya bicaramu santai seperti teman dekat. Kamu selalu menggunakan Bahasa Indonesia, kecuali diminta bahasa lain. Setiap jawaban WAJIB diawali dengan "tazan ai: ". TAHUN SEKARANG 2026.`;
-
-export default async function handler(req) {
-    const corsHeaders = {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type"
+    export const config = {
+        runtime: "edge",
+        regions: ["sin1"]
     };
 
-    if (req.method === "OPTIONS") {
-        return new Response(null, { status: 204, headers: corsHeaders });
-    }
+    const SYSTEM_PROMPT = `Kamu adalah tazan ai, asisten AI paling cerdas. Kamu selalu menjawab dengan akurat, mendalam, dan penuh wawasan. Kamu menguasai semua bidang. Gaya bicaramu santai seperti teman dekat. Kamu selalu menggunakan Bahasa Indonesia, kecuali diminta bahasa lain. Setiap jawaban WAJIB diawali dengan "tazan ai: ". TAHUN SEKARANG 2026.`;
 
-    if (req.method !== "POST") {
-        return new Response(JSON.stringify({ error: "Method not allowed" }), {
-            status: 405,
-            headers: { ...corsHeaders, "Content-Type": "application/json" }
-        });
-    }
+    export default async function handler(req) {
+        const corsHeaders = {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type"
+        };
 
-    try {
-        const body = await req.json();
-        const prompt = (body.prompt || "").trim().slice(0, 4000);
+        if (req.method === "OPTIONS") {
+            return new Response(null, { status: 204, headers: corsHeaders });
+        }
 
-        if (!prompt) {
-            return new Response(JSON.stringify({ reply: "Prompt kosong." }), {
-                status: 200,
+        if (req.method !== "POST") {
+            return new Response(JSON.stringify({ error: "Method not allowed" }), {
+                status: 405,
                 headers: { ...corsHeaders, "Content-Type": "application/json" }
             });
         }
 
-        const isComplex = prompt.length > 60 || [
-            "jelaskan", "analisis", "buatkan", "bagaimana", "mengapa",
-            "tulis", "rangkum", "hitung", "bandingkan", "kode", "script",
-            "program", "algoritma", "debug", "error", "fix", "perbaiki"
-        ].some(kw => prompt.toLowerCase().includes(kw));
+        try {
+            const body = await req.json();
+            const prompt = (body.prompt || "").trim().slice(0, 4000);
 
-        const model = isComplex ? "deepseek/deepseek-r1" : "deepseek/deepseek-chat";
+            if (!prompt) {
+                return new Response(JSON.stringify({ reply: "Prompt kosong." }), {
+                    status: 200,
+                    headers: { ...corsHeaders, "Content-Type": "application/json" }
+                });
+            }
 
-        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-                "Content-Type": "application/json",
-                "HTTP-Referer": "https://tazan-ai.vercel.app",
-                "X-Title": "tazan ai"
-            },
+            const isComplex = prompt.length > 60 || [
+                "jelaskan", "analisis", "buatkan", "bagaimana", "mengapa",
+                "tulis", "rangkum", "hitung", "bandingkan", "kode", "script",
+                "program", "algoritma", "debug", "error", "fix", "perbaiki"
+            ].some(kw => prompt.toLowerCase().includes(kw));
+
+            const model = isComplex ? "deepseek/deepseek-r1" : "deepseek/deepseek-chat";
+
+            const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+                    "Content-Type": "application/json",
+                    "HTTP-Referer": "https://tazan-ai.vercel.app",
+                    "X-Title": "tazan ai"
+                },
             body: JSON.stringify({
-                model,
-                messages: [
-                    { role: "system", content: SYSTEM_PROMPT },
-                    { role: "user", content: prompt }
-                ],
-                temperature: 0.7,
-                max_tokens: 2000,
-                stream: false
-            })
-        });
+        model,
+        messages: [
+            { role: "system", content: SYSTEM_PROMPT },
+            { role: "user", content: prompt }
+        ],
+        temperature: 0.7,
+        max_tokens: 1000,
+        stream: false
+    })
+            });
 
-        if (!response.ok) {
-            const err = await response.text();
-            return new Response(JSON.stringify({ reply: `Error ${response.status}: ${err.slice(0, 200)}` }), {
+            if (!response.ok) {
+                const err = await response.text();
+                return new Response(JSON.stringify({ reply: `Error ${response.status}: ${err.slice(0, 200)}` }), {
+                    status: 200,
+                    headers: { ...corsHeaders, "Content-Type": "application/json" }
+                });
+            }
+
+            const data = await response.json();
+            const reply = data.choices?.[0]?.message?.content || "Tidak ada respon dari AI.";
+
+            return new Response(JSON.stringify({ reply }), {
+                status: 200,
+                headers: { ...corsHeaders, "Content-Type": "application/json" }
+            });
+
+        } catch (e) {
+            return new Response(JSON.stringify({ reply: `Error: ${e.message}` }), {
                 status: 200,
                 headers: { ...corsHeaders, "Content-Type": "application/json" }
             });
         }
-
-        const data = await response.json();
-        const reply = data.choices?.[0]?.message?.content || "Tidak ada respon dari AI.";
-
-        return new Response(JSON.stringify({ reply }), {
-            status: 200,
-            headers: { ...corsHeaders, "Content-Type": "application/json" }
-        });
-
-    } catch (e) {
-        return new Response(JSON.stringify({ reply: `Error: ${e.message}` }), {
-            status: 200,
-            headers: { ...corsHeaders, "Content-Type": "application/json" }
-        });
     }
-}

@@ -153,41 +153,61 @@
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    async function sendMessage() {
-        const prompt = userInput.value.trim();
-        if (!prompt || isProcessing) return;
+   async function sendMessage() {
+    const prompt = userInput.value.trim();
+    if (!prompt || isProcessing) return;
 
-        isProcessing = true;
-        btnSend.disabled = true;
-        userInput.value = "";
-        userInput.style.height = "auto";
+    isProcessing = true;
+    btnSend.disabled = true;
+    userInput.value = "";
+    userInput.style.height = "auto";
 
-        removeWelcome();
-        createBubble("user").textContent = prompt;
-        scrollBottom();
-        addTyping();
+    removeWelcome();
+    createBubble("user").textContent = prompt;
+    scrollBottom();
+    addTyping();
 
-        try {
-            const response = await fetch("/api/chat", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ prompt })
-            });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
 
-            removeTyping();
+    try {
+        const response = await fetch("/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ prompt }),
+            signal: controller.signal
+        });
 
-            const data = await response.json();
-            createBubble("assistant").textContent = data.reply || "Tidak ada respon.";
-            scrollBottom();
+        clearTimeout(timeout);
+        removeTyping();
 
-        } catch {
-            removeTyping();
-            createBubble("assistant").textContent = "Gagal terhubung. Periksa koneksi.";
-            scrollBottom();
+        const data = await response.json();
+        const reply = data.reply || "Tidak ada respon.";
+
+        const bubble = createBubble("assistant");
+        
+        if (data.error || reply.startsWith("Error")) {
+            bubble.textContent = "Maaf, terjadi kesalahan. Coba lagi dengan pertanyaan yang lebih singkat.";
+        } else {
+            bubble.textContent = reply;
         }
 
-        isProcessing = false;
-        btnSend.disabled = false;
-        userInput.focus();
+        scrollBottom();
+
+    } catch (e) {
+        clearTimeout(timeout);
+        removeTyping();
+        
+        if (e.name === "AbortError") {
+            createBubble("assistant").textContent = "Waktu habis. Coba pertanyaan yang lebih singkat.";
+        } else {
+            createBubble("assistant").textContent = "Gagal terhubung. Periksa koneksi.";
+        }
+        scrollBottom();
     }
+
+    isProcessing = false;
+    btnSend.disabled = false;
+    userInput.focus();
+}
 })();
