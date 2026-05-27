@@ -32,9 +32,9 @@ body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     background: var(--bg-primary);
     color: var(--text-primary);
-    overflow-x: hidden;
-    min-height: 100vh;
-    min-height: 100dvh;
+    overflow: hidden;
+    height: 100vh;
+    height: 100dvh;
     touch-action: manipulation;
 }
 
@@ -278,16 +278,18 @@ body.sidebar-open .sidebar-overlay {
 
 /* ========== MAIN CONTENT ========== */
 .main-content {
-    min-height: 100vh;
-    min-height: 100dvh;
+    height: 100vh;
+    height: 100dvh;
     display: flex;
     flex-direction: column;
     position: relative;
     z-index: 1;
     transition: margin-left 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow: hidden;
 }
 
 .top-bar {
+    flex-shrink: 0;
     position: sticky;
     top: 0;
     background: rgba(10, 10, 15, 0.8);
@@ -379,11 +381,13 @@ body.sidebar-open .sidebar-overlay {
     border-color: var(--accent);
 }
 
+/* ========== CHAT CONTAINER (FIXED LAYOUT) ========== */
 .chat-container {
     flex: 1;
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    min-height: 0;
 }
 
 .chat-messages {
@@ -420,10 +424,9 @@ body.sidebar-open .sidebar-overlay {
     padding: 40px 20px;
 }
 
-.welcome-icon svg {
-    width: 72px;
-    height: 72px;
-    color: var(--accent);
+.welcome-icon img {
+    width: 80px;
+    height: 80px;
     margin-bottom: 8px;
 }
 
@@ -556,9 +559,11 @@ body.sidebar-open .sidebar-overlay {
     to { opacity: 1; transform: translateY(0); }
 }
 
+/* ========== INPUT AREA (STAY DI BAWAH) ========== */
 .chat-input-area {
+    flex-shrink: 0;
     padding: 16px 20px 24px;
-    background: linear-gradient(to top, var(--bg-primary) 0%, transparent 100%);
+    background: linear-gradient(to top, var(--bg-primary) 0%, rgba(10, 10, 15, 0.95) 50%, transparent 100%);
 }
 
 .input-wrapper {
@@ -590,6 +595,7 @@ body.sidebar-open .sidebar-overlay {
     max-height: 120px;
     padding: 8px 0;
     line-height: 1.5;
+    overflow-y: auto;
 }
 
 .input-wrapper textarea::placeholder {
@@ -692,7 +698,7 @@ body.sidebar-open .sidebar-overlay {
     .message-content { font-size: 0.85rem; padding: 10px 14px; }
     .message-avatar { width: 32px; height: 32px; }
     .welcome-message h2 { font-size: 1.2rem; }
-    .welcome-icon svg { width: 56px; height: 56px; }
+    .welcome-icon img { width: 56px; height: 56px; }
     .chat-input-area { padding: 12px 16px 20px; }
     .input-wrapper { padding: 6px 6px 6px 16px; }
     .top-bar { padding: 10px 16px; }
