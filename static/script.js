@@ -175,7 +175,9 @@
         updateMemoryBadge();
         chatMessages.innerHTML = `
             <div class="welcome-message" id="welcomeMessage">
-                <div class="welcome-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><path d="M9 9h.01M15 9h.01"/></svg></div>
+                <div class="welcome-icon">
+                    <img src="https://img.icons8.com/?size=100&id=qCyjxePmto0j&format=png&color=000000" alt="TazanAI" width="80" height="80" style="filter: brightness(0) invert(1);">
+                </div>
                 <h2>Halo! Saya TazanAI 👋</h2>
                 <p>Tanya apa saja, saya siap membantu Anda 24/7</p>
             </div>`;
@@ -264,7 +266,7 @@
         } catch (e) {
             clearTimeout(timeout);
             removeTyping();
-            createBubble("assistant", e.name === "AbortError" ? "⏰ Waktu habis. Coba lagi." : " Gagal terhubung.");
+            createBubble("assistant", e.name === "AbortError" ? "⏰ Waktu habis. Coba lagi." : "📡 Gagal terhubung.");
             scrollBottom();
         }
         isProcessing = false;
