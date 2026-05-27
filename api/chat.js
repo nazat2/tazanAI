@@ -96,7 +96,7 @@ export default async function handler(req) {
         }
 
         const reader = response.body.getReader();
-        const decoder = new TextDecoder();
+        const encoder = new TextEncoder();
         let fullResponse = "";
 
         const stream = new ReadableStream({
@@ -106,7 +106,7 @@ export default async function handler(req) {
                         const { done, value } = await reader.read();
                         if (done) break;
 
-                        const chunk = decoder.decode(value, { stream: true });
+                        const chunk = new TextDecoder().decode(value, { stream: true });
                         const lines = chunk.split("\n");
 
                         for (const line of lines) {
@@ -115,8 +115,8 @@ export default async function handler(req) {
                                 if (data === "[DONE]") {
                                     history.push({ role: "assistant", content: fullResponse });
                                     const trimmed = history.slice(-MAX_HISTORY * 2);
-                                    const payload = JSON.stringify({ done: true, history: trimmed });
-                                    controller.enqueue(`data: ${payload}\n\n`);
+                                    const payload = JSON.stringify({ done: true, history: trimmed }) + "\n\n";
+                                    controller.enqueue(encoder.encode(`data: ${payload}`));
                                     controller.close();
                                     return;
                                 }
@@ -125,7 +125,8 @@ export default async function handler(req) {
                                     const content = parsed.choices?.[0]?.delta?.content;
                                     if (content) {
                                         fullResponse += content;
-                                        controller.enqueue(`data: ${JSON.stringify({ content })}\n\n`);
+                                        const payload = JSON.stringify({ content }) + "\n\n";
+                                        controller.enqueue(encoder.encode(`data: ${payload}`));
                                     }
                                 } catch {
                                     continue;
@@ -135,7 +136,8 @@ export default async function handler(req) {
                     }
                     controller.close();
                 } catch {
-                    controller.enqueue(`data: ${JSON.stringify({ error: "Stream interrupted" })}\n\n`);
+                    const payload = JSON.stringify({ error: "Stream interrupted" }) + "\n\n";
+                    controller.enqueue(encoder.encode(`data: ${payload}`));
                     controller.close();
                 }
             }
