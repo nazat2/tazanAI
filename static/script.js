@@ -1,0 +1,295 @@
+(function () {
+    "use strict";
+
+    const $ = (id) => document.getElementById(id);
+    const chatMessages = $("chatMessages");
+    const userInput = $("userInput");
+    const btnSend = $("btnSend");
+    const btnClear = $("btnClear");
+    const currentTime = $("currentTime");
+    const sidebarToggle = $("sidebarToggle");
+    const sidebar = $("sidebar");
+    const overlay = $("overlay");
+    const particlesContainer = $("particles");
+
+    let isProcessing = false;
+    let history = [];
+
+    const DAYS = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+    const MONTHS = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+
+    function now() {
+        const d = new Date();
+        return {
+            time: `${DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`,
+            iso: d.toISOString()
+        };
+    }
+
+    function updateTime() {
+        currentTime.textContent = now().time;
+    }
+
+    updateTime();
+    setInterval(updateTime, 30000);
+
+    function createParticles() {
+        const frag = document.createDocumentFragment();
+        for (let i = 0; i < 30; i++) {
+            const p = document.createElement("div");
+            p.classList.add("particle");
+            p.style.left = `${Math.random() * 100}%`;
+            p.style.top = `${Math.random() * 100}%`;
+            frag.appendChild(p);
+        }
+        particlesContainer.appendChild(frag);
+        document.querySelectorAll(".particle").forEach(p => {
+            gsap.to(p, {
+                opacity: Math.random() * 0.5 + 0.1,
+                duration: Math.random() * 2 + 1,
+                y: -Math.random() * 100 - 50,
+                x: Math.random() * 60 - 30,
+                repeat: -1,
+                yoyo: true,
+                ease: "sine.inOut",
+                delay: Math.random() * 3
+            });
+        });
+    }
+
+    createParticles();
+    gsap.from(".sidebar", { x: -50, opacity: 0, duration: 0.8, ease: "power3.out" });
+    gsap.from(".chat-input-area", { y: 40, opacity: 0, duration: 0.8, delay: 0.3, ease: "power3.out" });
+
+    function toggleSidebar() {
+        sidebar.classList.toggle("open");
+        overlay.classList.toggle("active");
+    }
+
+    sidebarToggle.addEventListener("click", toggleSidebar);
+    overlay.addEventListener("click", toggleSidebar);
+
+    function autoResize() {
+        userInput.style.height = "auto";
+        userInput.style.height = `${Math.min(userInput.scrollHeight, 150)}px`;
+    }
+
+    userInput.addEventListener("input", autoResize);
+    userInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+
+    btnSend.addEventListener("click", sendMessage);
+
+    function clearChat() {
+        history = [];
+        localStorage.removeItem("tazanai_history");
+        chatMessages.innerHTML = `
+            <div class="welcome-message" id="welcomeMessage">
+                <div class="welcome-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+                        <path d="M9 9h.01M15 9h.01"/>
+                    </svg>
+                </div>
+                <h2>Halo, aku TazanAI</h2>
+                <p>Tanya apa saja, aku siap bantu.</p>
+            </div>`;
+        gsap.from("#welcomeMessage", { opacity: 0, y: 20, duration: 0.6, ease: "power2.out" });
+    }
+
+    btnClear.addEventListener("click", clearChat);
+
+    function removeWelcome() {
+        const wm = $("welcomeMessage");
+        if (wm) {
+            gsap.to(wm, { opacity: 0, y: -20, duration: 0.3, ease: "power2.in", onComplete: () => wm.remove() });
+        }
+    }
+
+    function createBubble(role) {
+        const div = document.createElement("div");
+        div.classList.add("message", role);
+
+        const avatar = document.createElement("div");
+        avatar.classList.add("message-avatar");
+        avatar.textContent = role === "user" ? "U" : "TA";
+
+        const content = document.createElement("div");
+        content.classList.add("message-content");
+
+        div.appendChild(avatar);
+        div.appendChild(content);
+        chatMessages.appendChild(div);
+        gsap.from(div, { opacity: 0, y: 20, duration: 0.4, ease: "power2.out" });
+
+        return { div, content };
+    }
+
+    function addTyping() {
+        removeWelcome();
+        const div = document.createElement("div");
+        div.classList.add("message", "assistant");
+        div.id = "typingMessage";
+
+        const avatar = document.createElement("div");
+        avatar.classList.add("message-avatar");
+        avatar.textContent = "TA";
+
+        const content = document.createElement("div");
+        content.classList.add("message-content");
+        content.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
+
+        div.appendChild(avatar);
+        div.appendChild(content);
+        chatMessages.appendChild(div);
+        scrollBottom();
+    }
+
+    function removeTyping() {
+        const el = $("typingMessage");
+        if (el) el.remove();
+    }
+
+    function scrollBottom() {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function saveHistory() {
+        try {
+            const trimmed = history.slice(-20);
+            localStorage.setItem("tazanai_history", JSON.stringify(trimmed));
+        } catch {
+            localStorage.removeItem("tazanai_history");
+        }
+    }
+
+    function loadHistory() {
+        try {
+            const raw = localStorage.getItem("tazanai_history");
+            if (raw) {
+                const data = JSON.parse(raw);
+                if (Array.isArray(data)) history = data.slice(-20);
+            }
+        } catch {
+            history = [];
+        }
+    }
+
+    loadHistory();
+
+    async function sendMessage() {
+        const prompt = userInput.value.trim();
+        if (!prompt || isProcessing) return;
+
+        isProcessing = true;
+        btnSend.disabled = true;
+        userInput.value = "";
+        userInput.style.height = "auto";
+
+        removeWelcome();
+        createBubble("user").content.textContent = prompt;
+        scrollBottom();
+        addTyping();
+
+        history.push({ role: "user", content: prompt });
+
+        try {
+            const response = await fetch("/api/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    prompt,
+                    history: history.slice(-20)
+                })
+            });
+
+            removeTyping();
+
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                createBubble("assistant").content.textContent = err.error || "Gagal terhubung.";
+                scrollBottom();
+                isProcessing = false;
+                btnSend.disabled = false;
+                userInput.focus();
+                return;
+            }
+
+            const contentType = response.headers.get("content-type") || "";
+
+            if (contentType.includes("text/event-stream")) {
+                const { content: assistantContent } = createBubble("assistant");
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let fullText = "";
+                let buffer = "";
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split("\n");
+                    buffer = lines.pop() || "";
+
+                    for (const line of lines) {
+                        if (!line.startsWith("data: ")) continue;
+                        const data = line.slice(6);
+
+                        try {
+                            const parsed = JSON.parse(data);
+                            if (parsed.done) {
+                                if (parsed.history) {
+                                    history = parsed.history.slice(-20);
+                                    saveHistory();
+                                }
+                                continue;
+                            }
+                            if (parsed.error) {
+                                assistantContent.textContent = "Stream terputus, coba lagi.";
+                                continue;
+                            }
+                            if (parsed.content) {
+                                fullText += parsed.content;
+                                assistantContent.textContent = fullText;
+                                scrollBottom();
+                            }
+                        } catch {
+                            continue;
+                        }
+                    }
+                }
+
+                if (!fullText) {
+                    assistantContent.textContent = "Tidak ada respon.";
+                } else {
+                    history.push({ role: "assistant", content: fullText });
+                    saveHistory();
+                }
+            } else {
+                const data = await response.json();
+                createBubble("assistant").content.textContent = data.reply || "Tidak ada respon.";
+                if (data.reply) {
+                    history.push({ role: "assistant", content: data.reply });
+                    saveHistory();
+                }
+            }
+
+            scrollBottom();
+
+        } catch {
+            removeTyping();
+            createBubble("assistant").content.textContent = "Gagal terhubung. Periksa koneksi.";
+            scrollBottom();
+        }
+
+        isProcessing = false;
+        btnSend.disabled = false;
+        userInput.focus();
+    }
+})();

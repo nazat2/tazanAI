@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="TazanAI - Asisten AI cerdas berbasis DeepSeek">
+    <meta name="theme-color" content="#0a0a0f">
+    <title>TazanAI</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="bg-gradient"></div>
+    <div class="bg-grid"></div>
+    <div class="particles" id="particles"></div>
+    <div class="overlay" id="overlay"></div>
+
+    <div class="container">
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                            <path d="M2 17l10 5 10-5"/>
+                            <path d="M2 12l10 5 10-5"/>
+                        </svg>
+                    </div>
+                    <span>TazanAI</span>
+                </div>
+                <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 12h18M3 6h18M3 18h18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="sidebar-content">
+                <button class="btn-new-chat" id="btnClear">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 5v14M5 12h14"/>
+                    </svg>
+                    <span>Percakapan Baru</span>
+                </button>
+                <div class="sidebar-info">
+                    <div class="info-card">
+                        <span class="info-dot"></span>
+                        <span>DeepSeek R1 + Chat</span>
+                    </div>
+                    <div class="info-card">
+                        <span class="info-label">Waktu</span>
+                        <span class="info-value" id="currentTime"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="sidebar-footer">
+                <span>&copy; 2026 TazanAI</span>
+            </div>
+        </div>
+
+        <div class="main">
+            <div class="chat-container">
+                <div class="chat-messages" id="chatMessages">
+                    <div class="welcome-message" id="welcomeMessage">
+                        <div class="welcome-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="12" cy="12" r="10"/>
+                                <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+                                <path d="M9 9h.01M15 9h.01"/>
+                            </svg>
+                        </div>
+                        <h2>Halo, aku TazanAI</h2>
+                        <p>Tanya apa saja, aku siap bantu.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="chat-input-area">
+                <div class="input-wrapper">
+                    <textarea id="userInput" placeholder="Ketik pesan..." rows="1" autofocus></textarea>
+                    <button class="btn-send" id="btnSend" aria-label="Kirim pesan">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 2L11 13"/>
+                            <path d="M22 2L15 22l-4-9-9-4 20-7z"/>
+                        </svg>
+                    </button>
+                </div>
+                <span class="input-hint">Enter kirim, Shift+Enter baris baru</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="/static/script.js"></script>
+</body>
+</html>
