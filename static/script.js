@@ -14,21 +14,22 @@
         }
     }
 
-    const $ = (id) => document.getElementById(id);
-    const chatMessages = $("chatMessages");
-    const userInput = $("userInput");
-    const btnSend = $("btnSend");
-    const btnClear = $("btnClear");
-    const currentTime = $("currentTime");
-    const sidebarToggle = $("sidebarToggle");
-    const sidebar = $("sidebar");
-    const overlay = $("overlay");
-    const particlesContainer = $("particles");
-    const memoryCount = $("memoryCount");
-    const memoryInfo = $("memoryInfo");
-    const installBanner = $("installBanner");
-    const btnInstall = $("btnInstall");
-    const btnDismiss = $("btnDismiss");
+    const chatMessages = document.getElementById("chatMessages");
+    const userInput = document.getElementById("userInput");
+    const btnSend = document.getElementById("btnSend");
+    const btnClear = document.getElementById("btnClear");
+    const btnClearTop = document.getElementById("btnClearTop");
+    const currentTime = document.getElementById("currentTime");
+    const hamburgerBtn = document.getElementById("hamburgerToggle");
+    const sidebar = document.getElementById("sidebar");
+    const sidebarOverlay = document.getElementById("sidebarOverlay");
+    const sidebarClose = document.getElementById("sidebarClose");
+    const particlesContainer = document.getElementById("particles");
+    const memoryCount = document.getElementById("memoryCount");
+    const memoryInfo = document.getElementById("memoryInfo");
+    const installBanner = document.getElementById("installBanner");
+    const btnInstall = document.getElementById("btnInstall");
+    const btnDismiss = document.getElementById("btnDismiss");
 
     let isProcessing = false;
     let chatHistory = [];
@@ -37,98 +38,112 @@
     const DAYS = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
     const MONTHS = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 
-    function now() {
-        const d = new Date();
-        return `${DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-    }
-
     function updateTime() {
-        if (currentTime) currentTime.textContent = now();
+        if (!currentTime) return;
+        const d = new Date();
+        currentTime.textContent = `${DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
     }
-
     updateTime();
     setInterval(updateTime, 30000);
 
     function createParticles() {
         if (!particlesContainer || typeof gsap === "undefined") return;
-        const frag = document.createDocumentFragment();
-        for (let i = 0; i < 30; i++) {
+        for (let i = 0; i < 40; i++) {
             const p = document.createElement("div");
             p.classList.add("particle");
             p.style.left = `${Math.random() * 100}%`;
             p.style.top = `${Math.random() * 100}%`;
-            frag.appendChild(p);
-        }
-        particlesContainer.appendChild(frag);
-        document.querySelectorAll(".particle").forEach(p => {
+            particlesContainer.appendChild(p);
             gsap.to(p, {
-                opacity: Math.random() * 0.5 + 0.1,
-                duration: Math.random() * 2 + 1,
+                opacity: Math.random() * 0.4 + 0.1,
+                duration: Math.random() * 3 + 2,
                 y: -Math.random() * 100 - 50,
-                x: Math.random() * 60 - 30,
+                x: Math.random() * 80 - 40,
                 repeat: -1,
                 yoyo: true,
                 ease: "sine.inOut",
-                delay: Math.random() * 3
+                delay: Math.random() * 4
             });
-        });
+        }
     }
-
     createParticles();
 
-    if (typeof gsap !== "undefined") {
-        gsap.from(".sidebar", { x: -50, opacity: 0, duration: 0.8, ease: "power3.out" });
-        gsap.from(".chat-input-area", { y: 40, opacity: 0, duration: 0.8, delay: 0.3, ease: "power3.out" });
+    /* ========== SIDEBAR ========== */
+    function isDesktop() { return window.innerWidth >= 769; }
+
+    function openSidebar() {
+        document.body.classList.add("sidebar-open");
+        if (isDesktop()) document.body.classList.remove("sidebar-closed");
+        if (hamburgerBtn) hamburgerBtn.classList.add("active");
+    }
+
+    function closeSidebar() {
+        document.body.classList.remove("sidebar-open");
+        if (isDesktop()) document.body.classList.add("sidebar-closed");
+        if (hamburgerBtn) hamburgerBtn.classList.remove("active");
     }
 
     function toggleSidebar() {
-        sidebar.classList.toggle("open");
-        overlay.classList.toggle("active");
-        if (sidebarToggle) {
-            sidebarToggle.classList.toggle("active");
-        }
+        if (document.body.classList.contains("sidebar-open")) closeSidebar();
+        else openSidebar();
     }
 
-    // Event listeners hanya untuk mobile (lebar <= 768px)
-    if (sidebarToggle) {
-        sidebarToggle.addEventListener("click", toggleSidebar);
-    }
-    if (overlay) {
-        overlay.addEventListener("click", toggleSidebar);
-    }
-
-    // Tutup sidebar kalau resize ke desktop
-    window.addEventListener("resize", () => {
-        if (window.innerWidth > 768) {
-            sidebar.classList.remove("open");
-            overlay.classList.remove("active");
-            if (sidebarToggle) sidebarToggle.classList.remove("active");
+    function initSidebar() {
+        if (isDesktop()) {
+            document.body.classList.remove("sidebar-open", "sidebar-closed");
+            document.body.classList.add("sidebar-open");
+            if (hamburgerBtn) hamburgerBtn.classList.add("active");
+        } else {
+            document.body.classList.remove("sidebar-open", "sidebar-closed");
+            if (hamburgerBtn) hamburgerBtn.classList.remove("active");
         }
+    }
+    initSidebar();
+
+    if (hamburgerBtn) hamburgerBtn.addEventListener("click", (e) => { e.stopPropagation(); toggleSidebar(); });
+    if (sidebarClose) sidebarClose.addEventListener("click", () => closeSidebar());
+    if (sidebarOverlay) sidebarOverlay.addEventListener("click", () => closeSidebar());
+
+    document.addEventListener("click", (e) => {
+        if (!document.body.classList.contains("sidebar-open")) return;
+        if (isDesktop()) return;
+        if (sidebar && sidebar.contains(e.target)) return;
+        if (hamburgerBtn && hamburgerBtn.contains(e.target)) return;
+        closeSidebar();
     });
 
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && document.body.classList.contains("sidebar-open")) closeSidebar();
+    });
+
+    window.addEventListener("resize", () => initSidebar());
+
+    let touchStartX = 0;
+    document.addEventListener("touchstart", (e) => { touchStartX = e.changedTouches[0].screenX; });
+    document.addEventListener("touchend", (e) => {
+        const touchEndX = e.changedTouches[0].screenX;
+        const deltaX = touchEndX - touchStartX;
+        if (touchStartX < 35 && deltaX > 70 && !document.body.classList.contains("sidebar-open")) openSidebar();
+        if (document.body.classList.contains("sidebar-open") && deltaX < -60) closeSidebar();
+    });
+
+    /* ========== CHAT ========== */
     function autoResize() {
         userInput.style.height = "auto";
-        userInput.style.height = `${Math.min(userInput.scrollHeight, 150)}px`;
+        userInput.style.height = `${Math.min(userInput.scrollHeight, 120)}px`;
     }
-
     userInput.addEventListener("input", autoResize);
     userInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
-            sendMessage();
-        }
+        if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
     });
-
     btnSend.addEventListener("click", sendMessage);
 
     function saveHistory() {
         try {
-            const trimmed = chatHistory.slice(-20);
+            const trimmed = chatHistory.slice(-30);
             localStorage.setItem("tazanai_history", JSON.stringify(trimmed));
             updateMemoryBadge();
-        } catch {
-            localStorage.removeItem("tazanai_history");
-        }
+        } catch { localStorage.removeItem("tazanai_history"); }
     }
 
     function loadHistory() {
@@ -136,11 +151,13 @@
             const raw = localStorage.getItem("tazanai_history");
             if (raw) {
                 const data = JSON.parse(raw);
-                if (Array.isArray(data)) chatHistory = data.slice(-20);
+                if (Array.isArray(data)) chatHistory = data.slice(-30);
+                for (const msg of chatHistory) {
+                    if (msg.role === "user") createBubble("user", msg.content);
+                    else if (msg.role === "assistant") createBubble("assistant", msg.content);
+                }
             }
-        } catch {
-            chatHistory = [];
-        }
+        } catch { chatHistory = []; }
         updateMemoryBadge();
     }
 
@@ -149,12 +166,8 @@
         if (chatHistory.length > 0) {
             memoryInfo.style.display = "flex";
             memoryCount.textContent = `${chatHistory.length} pesan`;
-        } else {
-            memoryInfo.style.display = "none";
-        }
+        } else memoryInfo.style.display = "none";
     }
-
-    loadHistory();
 
     function clearChat() {
         chatHistory = [];
@@ -162,57 +175,39 @@
         updateMemoryBadge();
         chatMessages.innerHTML = `
             <div class="welcome-message" id="welcomeMessage">
-                <div class="welcome-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <circle cx="12" cy="12" r="10"/>
-                        <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
-                        <path d="M9 9h.01M15 9h.01"/>
-                    </svg>
-                </div>
-                <h2>Halo, aku TazanAI</h2>
-                <p>Tanya apa saja, aku siap bantu.</p>
+                <div class="welcome-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><path d="M9 9h.01M15 9h.01"/></svg></div>
+                <h2>Halo! Saya TazanAI 👋</h2>
+                <p>Tanya apa saja, saya siap membantu Anda 24/7</p>
             </div>`;
-        if (typeof gsap !== "undefined") {
-            gsap.from("#welcomeMessage", { opacity: 0, y: 20, duration: 0.6, ease: "power2.out" });
-        }
+        if (typeof gsap !== "undefined") gsap.from("#welcomeMessage", { opacity: 0, y: 20, duration: 0.6, ease: "power2.out" });
     }
 
-    if (btnClear) {
-        btnClear.addEventListener("click", clearChat);
-    }
+    if (btnClear) btnClear.addEventListener("click", clearChat);
+    if (btnClearTop) btnClearTop.addEventListener("click", clearChat);
 
     function removeWelcome() {
-        const wm = $("welcomeMessage");
-        if (wm) {
-            if (typeof gsap !== "undefined") {
-                gsap.to(wm, { opacity: 0, y: -20, duration: 0.3, ease: "power2.in", onComplete: () => wm.remove() });
-            } else {
-                wm.remove();
-            }
-        }
+        const wm = document.getElementById("welcomeMessage");
+        if (wm) { if (typeof gsap !== "undefined") gsap.to(wm, { opacity: 0, y: -20, duration: 0.3, ease: "power2.in", onComplete: () => wm.remove() }); else wm.remove(); }
     }
 
-    function createBubble(role) {
+    function createBubble(role, content) {
+        removeWelcome();
         const div = document.createElement("div");
         div.classList.add("message", role);
-
         const avatar = document.createElement("div");
         avatar.classList.add("message-avatar");
-        avatar.innerHTML = role === "user" 
-            ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-7 8-7s8 3 8 7"/></svg>`
-            : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>`;
-
-        const content = document.createElement("div");
-        content.classList.add("message-content");
-
+        avatar.innerHTML = role === "user"
+            ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-7 8-7s8 3 8 7"/></svg>`
+            : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>`;
+        const contentDiv = document.createElement("div");
+        contentDiv.classList.add("message-content");
+        contentDiv.innerHTML = renderMarkdown(content);
         div.appendChild(avatar);
-        div.appendChild(content);
+        div.appendChild(contentDiv);
         chatMessages.appendChild(div);
-        if (typeof gsap !== "undefined") {
-            gsap.from(div, { opacity: 0, y: 20, duration: 0.4, ease: "power2.out" });
-        }
-
-        return content;
+        if (typeof gsap !== "undefined") gsap.from(div, { opacity: 0, y: 20, duration: 0.4, ease: "power2.out" });
+        scrollBottom();
+        return contentDiv;
     }
 
     function addTyping() {
@@ -220,139 +215,90 @@
         const div = document.createElement("div");
         div.classList.add("message", "assistant");
         div.id = "typingMessage";
-
         const avatar = document.createElement("div");
         avatar.classList.add("message-avatar");
-        avatar.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>`;
-
+        avatar.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>`;
         const content = document.createElement("div");
         content.classList.add("message-content");
         content.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
-
         div.appendChild(avatar);
         div.appendChild(content);
         chatMessages.appendChild(div);
         scrollBottom();
     }
 
-    function removeTyping() {
-        const el = $("typingMessage");
-        if (el) el.remove();
-    }
-
-    function scrollBottom() {
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
+    function removeTyping() { const el = document.getElementById("typingMessage"); if (el) el.remove(); }
+    function scrollBottom() { chatMessages.scrollTop = chatMessages.scrollHeight; }
 
     async function sendMessage() {
         const prompt = userInput.value.trim();
         if (!prompt || isProcessing) return;
-
         isProcessing = true;
         btnSend.disabled = true;
         userInput.value = "";
         userInput.style.height = "auto";
-
-        removeWelcome();
-        createBubble("user").innerHTML = renderMarkdown(prompt);
-        scrollBottom();
+        createBubble("user", prompt);
         addTyping();
-
         chatHistory.push({ role: "user", content: prompt });
         saveHistory();
 
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 30000);
-
         try {
             const response = await fetch("/api/chat", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    prompt,
-                    history: chatHistory.slice(-20)
-                }),
+                body: JSON.stringify({ prompt, history: chatHistory.slice(-30) }),
                 signal: controller.signal
             });
-
             clearTimeout(timeout);
             removeTyping();
-
             const data = await response.json();
             const reply = data.reply || "Tidak ada respon.";
-
-            const bubble = createBubble("assistant");
-
-            if (reply.startsWith("Error")) {
-                bubble.innerHTML = renderMarkdown("⚠️ Maaf, terjadi kesalahan. Coba lagi ya.");
-            } else {
-                bubble.innerHTML = renderMarkdown(reply);
+            const bubble = createBubble("assistant", reply);
+            if (!reply.startsWith("Error")) {
                 chatHistory.push({ role: "assistant", content: reply });
                 saveHistory();
             }
-
             scrollBottom();
-
         } catch (e) {
             clearTimeout(timeout);
             removeTyping();
-
-            if (e.name === "AbortError") {
-                createBubble("assistant").innerHTML = renderMarkdown("⏰ Waktu habis. Coba pertanyaan yang lebih singkat ya.");
-            } else {
-                createBubble("assistant").innerHTML = renderMarkdown("📡 Gagal terhubung. Periksa koneksi internet kamu.");
-            }
+            createBubble("assistant", e.name === "AbortError" ? "⏰ Waktu habis. Coba lagi." : " Gagal terhubung.");
             scrollBottom();
         }
-
         isProcessing = false;
         btnSend.disabled = false;
         userInput.focus();
     }
 
+    loadHistory();
+    if (chatMessages.children.length === 0 || !chatMessages.querySelector(".welcome-message")) {
+        if (chatHistory.length === 0) clearChat();
+    }
+    userInput.focus();
+
     if ("serviceWorker" in navigator) {
-        window.addEventListener("load", () => {
-            navigator.serviceWorker.register("/static/sw.js").catch(() => {});
-        });
+        window.addEventListener("load", () => navigator.serviceWorker.register("/static/sw.js").catch(() => {}));
     }
 
     window.addEventListener("beforeinstallprompt", (e) => {
         e.preventDefault();
         deferredPrompt = e;
-        if (installBanner) {
-            installBanner.style.display = "block";
-            if (typeof gsap !== "undefined") {
-                gsap.from(installBanner, { y: 100, opacity: 0, duration: 0.5, ease: "power2.out" });
-            }
-        }
+        if (installBanner) { installBanner.style.display = "block"; if (typeof gsap !== "undefined") gsap.from(installBanner, { y: 100, opacity: 0, duration: 0.5, ease: "power2.out" }); }
     });
-
-    if (btnInstall) {
-        btnInstall.addEventListener("click", async () => {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                const result = await deferredPrompt.userChoice;
-                if (result.outcome === "accepted") {
-                    installBanner.style.display = "none";
-                }
-                deferredPrompt = null;
-            }
-        });
-    }
-
-    if (btnDismiss) {
-        btnDismiss.addEventListener("click", () => {
-            if (typeof gsap !== "undefined") {
-                gsap.to(installBanner, { y: 100, opacity: 0, duration: 0.3, ease: "power2.in", onComplete: () => {
-                    installBanner.style.display = "none";
-                }});
-            } else {
-                installBanner.style.display = "none";
-            }
-        });
-    }
-
-    window.addEventListener("appinstalled", () => {
-        if (installBanner) installBanner.style.display = "none";
+    if (btnInstall) btnInstall.addEventListener("click", async () => {
+        if (deferredPrompt) { deferredPrompt.prompt(); const result = await deferredPrompt.userChoice; if (result.outcome === "accepted") installBanner.style.display = "none"; deferredPrompt = null; }
     });
+    if (btnDismiss) btnDismiss.addEventListener("click", () => {
+        if (typeof gsap !== "undefined") gsap.to(installBanner, { y: 100, opacity: 0, duration: 0.3, ease: "power2.in", onComplete: () => installBanner.style.display = "none" });
+        else installBanner.style.display = "none";
+    });
+    window.addEventListener("appinstalled", () => { if (installBanner) installBanner.style.display = "none"; });
+
+    if (typeof gsap !== "undefined") {
+        gsap.from(".welcome-message", { opacity: 0, y: 30, duration: 0.8, ease: "power2.out" });
+        gsap.from(".top-bar", { y: -50, opacity: 0, duration: 0.6, ease: "power2.out" });
+        gsap.from(".chat-input-area", { y: 50, opacity: 0, duration: 0.6, delay: 0.2, ease: "power2.out" });
+    }
 })();
